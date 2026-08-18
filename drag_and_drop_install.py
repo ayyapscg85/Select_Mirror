@@ -144,14 +144,27 @@ def _create_shelf_button(icon_name):
     kwargs = dict(
         parent=shelf,
         label=SHELF_BUTTON_LABEL,
-        annotation="Select Mirror - select mirrored / both-side controls",
+        annotation="Select Mirror - select mirrored / both-side controls "
+                   "(right-click to assign a hotkey)",
         command="import selectMirrorUI; selectMirrorUI.show_ui()",
         sourceType="python",
     )
     if icon_name:
         kwargs["image1"] = icon_name
 
-    cmds.shelfButton(**kwargs)
+    btn = cmds.shelfButton(**kwargs)
+
+    menu = cmds.popupMenu(parent=btn, button=3)
+    cmds.menuItem(
+        parent=menu, label="Assign Hotkey - Toggle Side",
+        command="import selectMirrorUI\nselectMirrorUI.open_assign_hotkey_dialog('toggle')\n",
+        sourceType="python",
+    )
+    cmds.menuItem(
+        parent=menu, label="Assign Hotkey - Both Sides",
+        command="import selectMirrorUI\nselectMirrorUI.open_assign_hotkey_dialog('both')\n",
+        sourceType="python",
+    )
 
 
 # ---------------------------------------------------------------------------

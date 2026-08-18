@@ -34,9 +34,21 @@ it if needed, then hit **Update**. This is remembered across Maya sessions.
 
 ## Hotkeys
 
-To bind Toggle / Both Sides to hotkeys, use the wrapper functions below
-rather than the raw `selectMirror` functions -- these respect your saved
-custom-token setting even if the UI has never been opened this session.
+**Quick way (right-click any button):**
+
+Right-click **Toggle Side** or **Both Sides** in the UI window itself (or
+the **MirrorSel** shelf button), choose **Assign Hotkey...**, tick any
+modifiers (Ctrl/Alt/Shift), type a key (e.g. `T`, `F5`), and hit **Assign**.
+Done -- no need to open the Hotkey Editor. **Clear** removes a binding the
+same way. If the combo is already in use, you'll be asked before it's
+overwritten.
+
+**Manual way (Hotkey Editor):**
+
+To bind Toggle / Both Sides via **Windows > Settings/Preferences > Hotkey
+Editor** instead, use the wrapper functions below rather than the raw
+`selectMirror` functions -- these respect your saved custom-token setting
+even if the UI has never been opened this session.
 
 1. **Windows > Settings/Preferences > Hotkey Editor**
 2. Click the **+** to add a new runtime command.

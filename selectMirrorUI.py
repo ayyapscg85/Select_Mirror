@@ -52,9 +52,16 @@ class SelectMirrorUI(object):
 
         cmds.rowLayout(numberOfColumns=2, columnWidth2=(130, 130),
                         columnAttach2=("both", "both"), parent=main)
-        cmds.button(label="Toggle Side", height=30, command=self._on_toggle)
-        cmds.button(label="Both Sides", height=30, command=self._on_both)
+        toggle_btn = cmds.button(label="Toggle Side", height=30, command=self._on_toggle)
+        both_btn = cmds.button(label="Both Sides", height=30, command=self._on_both)
         cmds.setParent(main)
+
+        cmds.popupMenu(parent=toggle_btn, button=3)
+        cmds.menuItem(label="Assign Hotkey...", command=lambda *_a: open_assign_hotkey_dialog("toggle"))
+        cmds.popupMenu(parent=both_btn, button=3)
+        cmds.menuItem(label="Assign Hotkey...", command=lambda *_a: open_assign_hotkey_dialog("both"))
+        cmds.button(toggle_btn, edit=True, annotation="Right-click to assign a hotkey.")
+        cmds.button(both_btn, edit=True, annotation="Right-click to assign a hotkey.")
 
         cmds.separator(height=8, style="in", parent=main)
 
@@ -194,6 +201,125 @@ def hotkey_toggle():
 def hotkey_both():
     """Bind to a hotkey: selects current controls plus their mirrors."""
     return selectMirror.select_mirror_both(extra_pairs=_active_pairs_from_optionvar())
+
+
+# ---------------------------------------------------------------------------
+# Right-click shelf menu: "Assign Hotkey..."
+#
+# Lets an artist bind Toggle Side / Both Sides to a key combo directly,
+# without opening Maya's full Hotkey Editor. Uses cmds.nameCommand +
+# cmds.hotkey, the same mechanism the Hotkey Editor itself uses under the
+# hood, so assignments show up there too and persist normally.
+# ---------------------------------------------------------------------------
+
+_HOTKEY_INFO = {
+    "toggle": ("SelectMirror_ToggleSide", "Select Mirror: Toggle Side",
+               "import selectMirrorUI\nselectMirrorUI.hotkey_toggle()\n"),
+    "both": ("SelectMirror_BothSides", "Select Mirror: Both Sides",
+             "import selectMirrorUI\nselectMirrorUI.hotkey_both()\n"),
+}
+
+_HOTKEY_WINDOW = "selectMirrorHotkeyWin"
+
+
+def _format_combo(key, ctrl, alt, shift):
+    parts = []
+    if ctrl:
+        parts.append("Ctrl")
+    if alt:
+        parts.append("Alt")
+    if shift:
+        parts.append("Shift")
+    parts.append(key)
+    return "+".join(parts)
+
+
+def open_assign_hotkey_dialog(which):
+    """which: 'toggle' or 'both'."""
+    if which not in _HOTKEY_INFO:
+        return
+    label = "Toggle Side" if which == "toggle" else "Both Sides"
+
+    if cmds.window(_HOTKEY_WINDOW, exists=True):
+        cmds.deleteUI(_HOTKEY_WINDOW)
+
+    cmds.window(_HOTKEY_WINDOW, title="Hotkey: {0}".format(label),
+                widthHeight=(230, 160), sizeable=False)
+    col = cmds.columnLayout(adjustableColumn=True, rowSpacing=6, columnAttach=("both", 10))
+
+    cmds.text(label="Assign hotkey for:\n{0}".format(label), align="left")
+
+    cmds.rowLayout(numberOfColumns=3, columnWidth3=(65, 65, 65), parent=col)
+    ctrl_cb = cmds.checkBox(label="Ctrl")
+    alt_cb = cmds.checkBox(label="Alt")
+    shift_cb = cmds.checkBox(label="Shift")
+    cmds.setParent(col)
+
+    key_field = cmds.textField(placeholderText="Key (e.g. T, F5)")
+
+    cmds.rowLayout(numberOfColumns=2, columnWidth2=(105, 105), parent=col)
+    cmds.button(label="Assign", command=lambda *_a: _do_assign_hotkey(
+        which, key_field, ctrl_cb, alt_cb, shift_cb))
+    cmds.button(label="Clear", command=lambda *_a: _do_clear_hotkey(
+        key_field, ctrl_cb, alt_cb, shift_cb))
+    cmds.setParent(col)
+
+    cmds.showWindow(_HOTKEY_WINDOW)
+
+
+def _do_assign_hotkey(which, key_field, ctrl_cb, alt_cb, shift_cb):
+    key = cmds.textField(key_field, query=True, text=True).strip()
+    ctrl = cmds.checkBox(ctrl_cb, query=True, value=True)
+    alt = cmds.checkBox(alt_cb, query=True, value=True)
+    shift = cmds.checkBox(shift_cb, query=True, value=True)
+
+    if not key:
+        cmds.warning("Select Mirror: enter a key to assign.")
+        return
+
+    name_cmd, annotation, py_command = _HOTKEY_INFO[which]
+
+    existing = cmds.hotkey(keyShortcut=key, ctrlModifier=ctrl, altModifier=alt,
+                            shiftModifier=shift, query=True, name=True)
+    if existing and existing != name_cmd:
+        result = cmds.confirmDialog(
+            title="Hotkey In Use",
+            message="{0} is already assigned to:\n{1}\n\nOverwrite it?".format(
+                _format_combo(key, ctrl, alt, shift), existing),
+            button=["Overwrite", "Cancel"], defaultButton="Cancel",
+            cancelButton="Cancel", dismissString="Cancel",
+        )
+        if result != "Overwrite":
+            return
+
+    cmds.nameCommand(name_cmd, annotation=annotation, command=py_command, sourceType="python")
+    cmds.hotkey(keyShortcut=key, name=name_cmd, ctrlModifier=ctrl, altModifier=alt,
+                shiftModifier=shift)
+
+    cmds.inViewMessage(
+        amg="Select Mirror: {0} assigned to {1}".format(
+            annotation, _format_combo(key, ctrl, alt, shift)),
+        pos="topCenter", fade=True, alpha=0.9,
+    )
+    if cmds.window(_HOTKEY_WINDOW, exists=True):
+        cmds.deleteUI(_HOTKEY_WINDOW)
+
+
+def _do_clear_hotkey(key_field, ctrl_cb, alt_cb, shift_cb):
+    key = cmds.textField(key_field, query=True, text=True).strip()
+    ctrl = cmds.checkBox(ctrl_cb, query=True, value=True)
+    alt = cmds.checkBox(alt_cb, query=True, value=True)
+    shift = cmds.checkBox(shift_cb, query=True, value=True)
+
+    if not key:
+        cmds.warning("Select Mirror: enter the key combo to clear.")
+        return
+
+    cmds.hotkey(keyShortcut=key, name="", ctrlModifier=ctrl, altModifier=alt, shiftModifier=shift)
+    cmds.inViewMessage(
+        amg="Select Mirror: cleared {0}".format(_format_combo(key, ctrl, alt, shift)),
+        pos="topCenter", fade=True, alpha=0.9,
+    )
 
 
 if __name__ == "__main__":
