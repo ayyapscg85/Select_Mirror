@@ -9,14 +9,13 @@ All notable changes to this project are documented in this file.
   on Windows), icon copied to both `userBitmapsDir` and `prefs/icons` for
   reliability across Maya versions, automatic shelf-tab creation if no
   shelf is found, and a non-blocking in-viewport install confirmation
-  instead of a modal dialog.
+  instead of a prompt dialog.
 
 ## [1.0.0] - 2026-08-17
 
 ### Added
 - Custom shelf icon (`mirrorIcon.png`), installed automatically to Maya's
-  bitmaps folder by the installer.
-- Python rewrite of the original `selectMirror.mel`.
+  icons folder by the installer.
 - Namespace-aware side detection, including nested namespaces (referenced rigs).
 - Side token detected anywhere in the control name (not just the first token).
 - Built-in token pairs: `L/R`, `LT/RT`, `Lt/Rt`, `lt/rt`, `Left/Right`,
