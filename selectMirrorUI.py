@@ -210,13 +210,18 @@ def hotkey_both():
 # without opening Maya's full Hotkey Editor. Uses cmds.nameCommand +
 # cmds.hotkey, the same mechanism the Hotkey Editor itself uses under the
 # hood, so assignments show up there too and persist normally.
+#
+# The nameCommand is registered as MEL that explicitly calls into Python via
+# python("..."), rather than relying on sourceType="python" alone -- Maya's
+# hotkey execution path runs commands through MEL regardless, so a raw
+# Python string there gets parsed as MEL and fails.
 # ---------------------------------------------------------------------------
 
 _HOTKEY_INFO = {
     "toggle": ("SelectMirror_ToggleSide", "Select Mirror: Toggle Side",
-               "import selectMirrorUI\nselectMirrorUI.hotkey_toggle()\n"),
+               'python("import selectMirrorUI; selectMirrorUI.hotkey_toggle()")'),
     "both": ("SelectMirror_BothSides", "Select Mirror: Both Sides",
-             "import selectMirrorUI\nselectMirrorUI.hotkey_both()\n"),
+             'python("import selectMirrorUI; selectMirrorUI.hotkey_both()")'),
 }
 
 _HOTKEY_WINDOW = "selectMirrorHotkeyWin"
@@ -279,22 +284,13 @@ def _do_assign_hotkey(which, key_field, ctrl_cb, alt_cb, shift_cb):
 
     name_cmd, annotation, py_command = _HOTKEY_INFO[which]
 
-    existing = cmds.hotkey(keyShortcut=key, ctrlModifier=ctrl, altModifier=alt,
-                            shiftModifier=shift, query=True, name=True)
-    if existing and existing != name_cmd:
-        result = cmds.confirmDialog(
-            title="Hotkey In Use",
-            message="{0} is already assigned to:\n{1}\n\nOverwrite it?".format(
-                _format_combo(key, ctrl, alt, shift), existing),
-            button=["Overwrite", "Cancel"], defaultButton="Cancel",
-            cancelButton="Cancel", dismissString="Cancel",
-        )
-        if result != "Overwrite":
-            return
-
-    cmds.nameCommand(name_cmd, annotation=annotation, command=py_command, sourceType="python")
-    cmds.hotkey(keyShortcut=key, name=name_cmd, ctrlModifier=ctrl, altModifier=alt,
-                shiftModifier=shift)
+    try:
+        cmds.nameCommand(name_cmd, annotation=annotation, command=py_command, sourceType="mel")
+        cmds.hotkey(keyShortcut=key, name=name_cmd, ctrlModifier=ctrl, altModifier=alt,
+                    shiftModifier=shift)
+    except Exception as exc:
+        cmds.warning("Select Mirror: could not assign hotkey ({0}).".format(exc))
+        return
 
     cmds.inViewMessage(
         amg="Select Mirror: {0} assigned to {1}".format(
@@ -315,7 +311,12 @@ def _do_clear_hotkey(key_field, ctrl_cb, alt_cb, shift_cb):
         cmds.warning("Select Mirror: enter the key combo to clear.")
         return
 
-    cmds.hotkey(keyShortcut=key, name="", ctrlModifier=ctrl, altModifier=alt, shiftModifier=shift)
+    try:
+        cmds.hotkey(keyShortcut=key, name="", ctrlModifier=ctrl, altModifier=alt, shiftModifier=shift)
+    except Exception as exc:
+        cmds.warning("Select Mirror: could not clear hotkey ({0}).".format(exc))
+        return
+
     cmds.inViewMessage(
         amg="Select Mirror: cleared {0}".format(_format_combo(key, ctrl, alt, shift)),
         pos="topCenter", fade=True, alpha=0.9,

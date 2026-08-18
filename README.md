@@ -40,8 +40,10 @@ Right-click **Toggle Side** or **Both Sides** in the UI window itself (or
 the **MirrorSel** shelf button), choose **Assign Hotkey...**, tick any
 modifiers (Ctrl/Alt/Shift), type a key (e.g. `T`, `F5`), and hit **Assign**.
 Done -- no need to open the Hotkey Editor. **Clear** removes a binding the
-same way. If the combo is already in use, you'll be asked before it's
-overwritten.
+same way. If that combo already had something else assigned to it, this
+will overwrite it (same as re-assigning a key in the Hotkey Editor) --
+check Windows > Settings/Preferences > Hotkey Editor first if you're not
+sure what's currently on a key you want to use.
 
 **Manual way (Hotkey Editor):**
 
