@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented in this file.
 
-## [1.3.2] - 2026-08-18
+## [1.3.0] - 2026-08-18
 
 ### Fixed
 - Hotkeys assigned via "Assign Hotkey..." were throwing a MEL
@@ -13,24 +13,6 @@ All notable changes to this project are documented in this file.
   into Python via `python("...")` -- the standard, reliable pattern for
   Python hotkeys in Maya. Existing assignments made with the old (broken)
   version need to be re-assigned once via the dialog to pick up the fix.
-
-## [1.3.1] - 2026-08-18
-
-### Fixed
-- "Assign Hotkey" was throwing `TypeError: Flag 'keyShortcut' must be passed
-  a boolean argument when query flag is set`. `cmds.hotkey`'s query mode
-  can't be used to look up what command owns a given key combo the way it
-  was being used here. Removed the (broken) conflict-check step -- hotkeys
-  now assign directly, the same way the Hotkey Editor itself overwrites an
-  existing binding on a combo.
-
-## [1.3.0] - 2026-08-18
-
-### Added
-- Right-click "Assign Hotkey..." menu on the **Toggle Side** and **Both
-  Sides** buttons inside the UI window itself, not just the shelf button --
-  matches the convenience of tools like Morgan Loomis's ml_tools
-  (`ButtonWithPopup`). Uses the same hotkey-assign dialog added in 1.2.0.
 
 ## [1.2.0] - 2026-08-18
 
